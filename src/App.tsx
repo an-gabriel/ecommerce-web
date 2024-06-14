@@ -6,7 +6,8 @@ import theme from './theme';
 import Header from './components/Header';
 import Menu from './components/Menu';
 import CategoriaForm from './components/CategoriaForm';
-// import ClienteForm from './components/ClienteForm';
+import ClienteForm from './components/ClienteForm';
+import ProdutoForm from './components/ProdutoForm';
 
 
 const App: React.FC = () => {
@@ -20,6 +21,10 @@ const App: React.FC = () => {
     switch (selectedForm) {
       case 'cadastro_categoria':
         return <CategoriaForm />;
+      case 'cadastro_cliente':
+        return <ClienteForm />;
+      case 'cadastro_produto':
+        return <ProdutoForm />;
       case 'listagem_categoria':
         return <div>Listagem de Categoria</div>;
       default:
