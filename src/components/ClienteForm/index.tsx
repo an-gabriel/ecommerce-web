@@ -4,10 +4,6 @@ import MuiAlert from '@mui/material/Alert';
 import AdicionarClienteModal from './components/AdicionarClienteModal';
 import ListagemCliente from './components/ListagemCliente';
 import api from '../../client/api';
-<<<<<<< HEAD
-=======
-import { AxiosError } from 'axios';
->>>>>>> 78a17924a9166d4be3b8cb47536fd9d576cacc94
 
 interface Cliente {
     id: number;
