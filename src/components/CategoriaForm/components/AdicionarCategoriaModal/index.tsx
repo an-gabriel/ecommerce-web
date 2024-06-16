@@ -14,10 +14,11 @@ interface AdicionarCategoriaModalProps {
     open: boolean;
     onClose: () => void;
     onCategoriaAdded: (novaCategoria: Categoria) => void;
+    categoriaInicial?: Categoria | null;
 }
 
-const AdicionarCategoriaModal: React.FC<AdicionarCategoriaModalProps> = ({ open, onClose, onCategoriaAdded }) => {
-    const initialValues: Categoria = {
+const AdicionarCategoriaModal: React.FC<AdicionarCategoriaModalProps> = ({ open, onClose, onCategoriaAdded, categoriaInicial }) => {
+    const initialValues: Categoria = categoriaInicial || {
         categoria_id: 0,
         nome_categoria: '',
         descricao_categoria: '',
@@ -34,15 +35,19 @@ const AdicionarCategoriaModal: React.FC<AdicionarCategoriaModalProps> = ({ open,
 
     const handleSubmit = async (values: Categoria) => {
         try {
-            const response = await api.post('/categorias', values);
-            console.log('Categoria cadastrada com sucesso:', response.data);
+            let response;
+            if (categoriaInicial) {
+                response = await api.put(`/categorias/${values.categoria_id}`, values);
+            } else {
+                response = await api.post('/categorias', values);
+            }
+            console.log('Categoria salva com sucesso:', response.data);
 
             onCategoriaAdded(response.data);
 
-            formik.resetForm();
             onClose();
         } catch (error) {
-            console.error('Erro ao cadastrar categoria:', error);
+            console.error('Erro ao salvar categoria:', error);
         }
     };
 
@@ -52,16 +57,12 @@ const AdicionarCategoriaModal: React.FC<AdicionarCategoriaModalProps> = ({ open,
         onSubmit: handleSubmit,
     });
 
-    const handleSalvar = () => {
-        formik.handleSubmit();
-    };
-
     return (
         <Modal
             open={open}
             onClose={onClose}
             aria-labelledby="modal-adicionar-categoria"
-            aria-describedby="modal-para-adicionar-uma-nova-categoria"
+            aria-describedby="modal-para-adicionar-ou-editar-uma-categoria"
         >
             <Box sx={{
                 position: 'absolute',
@@ -75,7 +76,7 @@ const AdicionarCategoriaModal: React.FC<AdicionarCategoriaModalProps> = ({ open,
                 maxWidth: '90%',
             }}>
                 <Typography variant="h6" gutterBottom>
-                    Nova Categoria
+                    {categoriaInicial ? 'Editar Categoria' : 'Nova Categoria'}
                 </Typography>
                 <TextField
                     label="Nome da Categoria"
@@ -106,7 +107,7 @@ const AdicionarCategoriaModal: React.FC<AdicionarCategoriaModalProps> = ({ open,
                     rows={4}
                     maxRows={8}
                 />
-                <Button type="button" variant="contained" color="primary" onClick={handleSalvar}>
+                <Button type="button" variant="contained" color="primary" onClick={() => formik.handleSubmit}>
                     Salvar
                 </Button>
             </Box>

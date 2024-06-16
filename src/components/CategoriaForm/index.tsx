@@ -29,6 +29,9 @@ const CategoriaForm: React.FC = () => {
             const response = await api.get('/categorias');
             const categoriasCarregadas: Categoria[] = response.data;
             setCategorias(categoriasCarregadas);
+
+            const paginaAtual = Math.ceil(categoriasCarregadas.length / 10);
+            setCurrentPage(paginaAtual);
         } catch (error) {
             console.error('Erro ao carregar categorias:', error);
         } finally {
@@ -38,15 +41,29 @@ const CategoriaForm: React.FC = () => {
 
     const adicionarCategoria = async (novaCategoria: Categoria) => {
         try {
-
             await api.post('/categorias', novaCategoria);
-
             await fetchCategorias();
-
-            const paginaAtual = Math.ceil(categorias.length / 10);
-            setCurrentPage(paginaAtual);
         } catch (error) {
             console.error('Erro ao adicionar categoria:', error);
+        }
+    };
+
+    const handleEditCategoria = async (categoriaId: number, novoConteudo: Categoria) => {
+        try {
+            await api.put(`/categorias/${categoriaId}`, novoConteudo);
+            await fetchCategorias();
+            console.log(`Categoria ${categoriaId} atualizada com sucesso!`);
+        } catch (error) {
+            console.error(`Erro ao atualizar categoria ${categoriaId}:`, error);
+        }
+    };
+
+    const handleDeleteCategoria = async (categoriaId: number) => {
+        try {
+            await api.delete(`/categorias/${categoriaId}`);
+            await fetchCategorias();
+        } catch (error) {
+            console.error(`Erro ao excluir categoria ${categoriaId}:`, error);
         }
     };
 
@@ -68,7 +85,12 @@ const CategoriaForm: React.FC = () => {
                 + Adicionar Nova Categoria
             </Button>
 
-            <ListaCategorias categorias={categorias} currentPage={currentPage} />
+            <ListaCategorias
+                categorias={categorias}
+                currentPage={currentPage}
+                onDeleteCategoria={handleDeleteCategoria}
+                onEditCategoria={handleEditCategoria}
+            />
 
             <AdicionarCategoriaModal
                 open={openModal}

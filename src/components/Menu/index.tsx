@@ -48,14 +48,23 @@ const Menu: React.FC<MenuProps> = ({ onSelectForm }) => {
                                     Produto
                                 </Button>
                             </ListItemButton>
-                            <ListItemButton onClick={() => onSelectForm('cadastro_pedido')}>
-                                <Button variant="contained" fullWidth startIcon={<LocalShippingIcon />}>
-                                    Pedido
-                                </Button>
-                            </ListItemButton>
                             <ListItemButton onClick={() => onSelectForm('cadastro_endereco')}>
                                 <Button variant="contained" fullWidth startIcon={<LocationCity />}>
                                     Endereco
+                                </Button>
+                            </ListItemButton>
+                        </List>
+                    </AccordionDetails>
+                </Accordion>
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Typography variant="h6">Solicitações</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <List>
+                            <ListItemButton onClick={() => onSelectForm('cadastro_pedido')}>
+                                <Button variant="contained" fullWidth startIcon={<LocalShippingIcon />}>
+                                    Pedido
                                 </Button>
                             </ListItemButton>
                         </List>

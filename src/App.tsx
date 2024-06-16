@@ -9,6 +9,7 @@ import CategoriaForm from './components/CategoriaForm';
 import ClienteForm from './components/ClienteForm';
 import ProdutoForm from './components/ProdutoForm';
 import PedidoForm from './components/PedidoForm';
+import EnderecoForm from './components/EnderecoForm';
 
 const App: React.FC = () => {
   const [selectedForm, setSelectedForm] = useState<string>('cadastro_categoria');
@@ -30,6 +31,8 @@ const App: React.FC = () => {
         return <ProdutoForm />;
       case 'cadastro_pedido':
         return <PedidoForm />;
+      case 'cadastro_endereco':
+        return <EnderecoForm />;
       default:
         return null;
     }
