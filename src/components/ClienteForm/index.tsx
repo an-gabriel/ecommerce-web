@@ -1,79 +1,88 @@
-import React, { useState } from 'react';
-import { TextField, Button, Typography, Box } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Button, Box, Snackbar } from '@mui/material';
+import MuiAlert from '@mui/material/Alert';
+import AdicionarClienteModal from './components/AdicionarClienteModal';
+import ListagemCliente from './components/ListagemCliente';
+import api from '../../client/api';
+import { AxiosError } from 'axios';
+
+interface Cliente {
+    id: number;
+    email: string;
+    username: string;
+    nome: string;
+    cpf: string;
+    telefone: string;
+    data_nascimento: string;
+}
+
+interface ErrorResponse {
+    message: string;
+    error: string;
+    statusCode: number;
+}
 
 const ClienteForm: React.FC = () => {
-    const [email, setEmail] = useState('');
-    const [username, setUsername] = useState('');
-    const [senha, setSenha] = useState('');
-    const [nome, setNome] = useState('');
-    const [cpf, setCpf] = useState('');
-    const [telefone, setTelefone] = useState('');
-    const [dataNascimento, setDataNascimento] = useState('');
+    const [openModal, setOpenModal] = useState(false);
+    const [clientes, setClientes] = useState<Cliente[]>([]);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleSubmit = (event: React.FormEvent) => {
-        event.preventDefault();
-        console.log({ email, username, senha, nome, cpf, telefone, dataNascimento });
+    const handleOpenModal = () => {
+        setOpenModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setOpenModal(false);
+    };
+
+    const fetchClientes = async () => {
+        try {
+            const response = await api.get('/clientes');
+            setClientes(response.data);
+        } catch (error) {
+            console.error('Erro ao carregar clientes:', error);
+            setError('Erro ao carregar clientes. Tente novamente mais tarde.');
+        }
+    };
+
+    const adicionarCliente = async (novoCliente: Partial<Cliente>) => {
+        try {
+            const response = await api.post('/clientes', { ...novoCliente, endereco_id: 1 });
+            console.log('Cliente adicionado com sucesso:', response.data);
+            await fetchClientes();
+        } catch (error) {
+            console.error('Erro ao adicionar cliente:', error);
+            setError('Erro ao adicionar cliente. Tente novamente mais tarde.');
+        }
+    };
+
+    useEffect(() => {
+        fetchClientes();
+    }, []);
+
+    const handleSnackbarClose = () => {
+        setError(null);
     };
 
     return (
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-            <Typography variant="h6" gutterBottom>
-                Novo Cliente
-            </Typography>
-            <TextField
-                label="E-mail"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                fullWidth
-                margin="normal"
-            />
-            <TextField
-                label="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                fullWidth
-                margin="normal"
-            />
-            <TextField
-                label="Senha"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                fullWidth
-                margin="normal"
-            />
-            <TextField
-                label="Nome"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                fullWidth
-                margin="normal"
-            />
-            <TextField
-                label="CPF"
-                value={cpf}
-                onChange={(e) => setCpf(e.target.value)}
-                fullWidth
-                margin="normal"
-            />
-            <TextField
-                label="Telefone"
-                value={telefone}
-                onChange={(e) => setTelefone(e.target.value)}
-                fullWidth
-                margin="normal"
-            />
-            <TextField
-                label="Data de Nascimento"
-                type="date"
-                value={dataNascimento}
-                onChange={(e) => setDataNascimento(e.target.value)}
-                fullWidth
-                margin="normal"
-                InputLabelProps={{ shrink: true }}
-            />
-            <Button type="submit" variant="contained" color="primary">
-                Salvar
+        <Box sx={{ mt: 2 }}>
+            <Button onClick={handleOpenModal} variant="contained" color="primary" sx={{ mb: 2 }}>
+                + Adicionar Novo Cliente
             </Button>
+
+            <ListagemCliente clientes={clientes} />
+
+            <AdicionarClienteModal
+                open={openModal}
+                onClose={handleCloseModal}
+                onClienteAdded={adicionarCliente}
+            />
+
+            <Snackbar open={!!error} autoHideDuration={6000} onClose={handleSnackbarClose}>
+                <MuiAlert elevation={6} variant="filled" onClose={handleSnackbarClose} severity="error">
+                    {error}
+                </MuiAlert>
+            </Snackbar>
         </Box>
     );
 };
