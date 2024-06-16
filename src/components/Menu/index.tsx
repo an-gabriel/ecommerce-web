@@ -5,6 +5,7 @@ import AddIcon from '@mui/icons-material/Add';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import WidgetsIcon from '@mui/icons-material/Widgets';
+import LocationCity from '@mui/icons-material/LocationCity'
 
 
 interface MenuProps {
@@ -50,6 +51,11 @@ const Menu: React.FC<MenuProps> = ({ onSelectForm }) => {
                             <ListItemButton onClick={() => onSelectForm('cadastro_pedido')}>
                                 <Button variant="contained" fullWidth startIcon={<LocalShippingIcon />}>
                                     Pedido
+                                </Button>
+                            </ListItemButton>
+                            <ListItemButton onClick={() => onSelectForm('cadastro_endereco')}>
+                                <Button variant="contained" fullWidth startIcon={<LocationCity />}>
+                                    Endereco
                                 </Button>
                             </ListItemButton>
                         </List>

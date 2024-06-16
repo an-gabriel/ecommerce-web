@@ -89,17 +89,6 @@ const AdicionarProdutoModal: React.FC<AdicionarProdutoModalProps> = ({
                         />
                     </Grid>
                     <Grid item xs={12}>
-                        <TextField
-                            label="ID do Pedido"
-                            value={pedidoId !== null ? pedidoId : ''}
-                            fullWidth
-                            sx={{ mb: 2 }}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                        />
-                    </Grid>
-                    <Grid item xs={12}>
                         <Button variant="contained" color="primary" onClick={adicionarProdutoPedido} fullWidth>
                             Adicionar Produto
                         </Button>

@@ -1,71 +1,85 @@
-import React, { useState } from 'react';
-import { TextField, Button, Typography, Box } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Button, Box, Snackbar } from '@mui/material';
+import MuiAlert from '@mui/material/Alert';
+import ListagemProduto from './components/ListagemProduto';
+import AdicionarProdutoModal from './components/AdicionarProdutoModal';
+import api from '../../client/api';
+
+interface Produto {
+    produto_id: number;
+    nome_produto: string;
+    descricao_produto: string;
+    preco_produto: number;
+    qtd_estoque: number;
+    categoria_id: number;
+    imagem: string;
+    categoria: {
+        categoria_id: number,
+        descricao_categoria: string
+    }
+}
 
 const ProdutoForm: React.FC = () => {
-    const [nomeProduto, setNomeProduto] = useState('');
-    const [descricaoProduto, setDescricaoProduto] = useState('');
-    const [precoProduto, setPrecoProduto] = useState('');
-    const [qtdEstoque, setQtdEstoque] = useState('');
-    const [categoriaId, setCategoriaId] = useState('');
-    const [imagem, setImagem] = useState('');
+    const [openModal, setOpenModal] = useState(false);
+    const [produtos, setProdutos] = useState<Produto[]>([]);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleSubmit = (event: React.FormEvent) => {
-        event.preventDefault();
-        console.log({ nomeProduto, descricaoProduto, precoProduto, qtdEstoque, categoriaId, imagem });
+    const handleOpenModal = () => {
+        setOpenModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setOpenModal(false);
+    };
+
+    const fetchProdutos = async () => {
+        try {
+            const response = await api.get('/produtos');
+            setProdutos(response.data);
+        } catch (error) {
+            console.error('Erro ao carregar produtos:', error);
+            setError('Erro ao carregar produtos. Tente novamente mais tarde.');
+        }
+    };
+
+    const adicionarProduto = async (novoProduto: Partial<Produto>) => {
+        try {
+            const response = await api.post('/produtos', novoProduto);
+            console.log('Produto adicionado com sucesso:', response.data);
+            await fetchProdutos();
+        } catch (error) {
+            console.error('Erro ao adicionar produto:', error);
+            setError('Erro ao adicionar produto. Tente novamente mais tarde.');
+        }
+    };
+
+    useEffect(() => {
+        fetchProdutos();
+    }, []);
+
+    const handleSnackbarClose = () => {
+        setError(null);
     };
 
     return (
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-            <Typography variant="h6" gutterBottom>
-                Novo Produto
-            </Typography>
-            <TextField
-                label="Nome do Produto"
-                value={nomeProduto}
-                onChange={(e) => setNomeProduto(e.target.value)}
-                fullWidth
-                margin="normal"
-            />
-            <TextField
-                label="Descrição do Produto"
-                value={descricaoProduto}
-                onChange={(e) => setDescricaoProduto(e.target.value)}
-                fullWidth
-                margin="normal"
-                multiline
-                rows={4}
-            />
-            <TextField
-                label="Preço do Produto"
-                value={precoProduto}
-                onChange={(e) => setPrecoProduto(e.target.value)}
-                fullWidth
-                margin="normal"
-            />
-            <TextField
-                label="Quantidade em Estoque"
-                value={qtdEstoque}
-                onChange={(e) => setQtdEstoque(e.target.value)}
-                fullWidth
-                margin="normal"
-            />
-            <TextField
-                label="ID da Categoria"
-                value={categoriaId}
-                onChange={(e) => setCategoriaId(e.target.value)}
-                fullWidth
-                margin="normal"
-            />
-            <TextField
-                label="URL da Imagem"
-                value={imagem}
-                onChange={(e) => setImagem(e.target.value)}
-                fullWidth
-                margin="normal"
-            />
-            <Button type="submit" variant="contained" color="primary">
-                Salvar
+        <Box sx={{ mt: 2 }}>
+            <Button onClick={handleOpenModal} variant="contained" color="primary" sx={{ mb: 2 }}>
+                + Adicionar Novo Produto
             </Button>
+
+            <ListagemProduto produtos={produtos} />
+
+            <AdicionarProdutoModal
+                open={openModal}
+                onClose={handleCloseModal}
+                onProdutoAdded={adicionarProduto}
+            />
+
+            <Snackbar open={!!error} autoHideDuration={6000} onClose={handleSnackbarClose}>
+                <MuiAlert elevation={6} variant="filled" onClose={handleSnackbarClose} severity="error">
+                    {error}
+                </MuiAlert>
+            </Snackbar>
         </Box>
     );
 };

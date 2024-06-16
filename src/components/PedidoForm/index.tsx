@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { TextField, Button, Box, FormControl, InputLabel, Select, MenuItem, Typography, Grid } from '@mui/material';
-import PedidoProdutoGrid, { PedidoProduto } from '../PedidoProdutoGrid';
+import React, { useState } from 'react';
+import { TextField, Button, Box, FormControl, InputLabel, Select, MenuItem, Typography, Grid, FormHelperText } from '@mui/material';
+import PedidoProdutoGrid, { PedidoProduto } from './components/PedidoProdutoGrid';
 import AdicionarProdutoModal from './components/AdicionarProdutoModal';
 import AddIcon from '@mui/icons-material/Add';
+import api from '../../client/api'
+import { Formik, Form, Field, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
 
 interface Produto {
     produto_id: number;
@@ -11,22 +14,11 @@ interface Produto {
 }
 
 const PedidoForm: React.FC = () => {
-    const [dataPedido, setDataPedido] = useState(() => {
-        const hoje = new Date();
-        const ano = hoje.getFullYear().toString().padStart(4, '0');
-        const mes = (hoje.getMonth() + 1).toString().padStart(2, '0');
-        const dia = hoje.getDate().toString().padStart(2, '0');
-        return `${ano}-${mes}-${dia}`;
-    });
-
-    const [numeroPedido, setNumeroPedido] = useState('');
-    const [valorTotal, setValorTotal] = useState<number>(0);
-    const [status, setStatus] = useState('ativo');
+    const [pedidoId, setPedidoId] = useState<number | null>(null);
     const [produtosPedido, setProdutosPedido] = useState<PedidoProduto[]>([]);
     const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null);
     const [quantidadeProduto, setQuantidadeProduto] = useState<number>(1);
     const [precoProduto, setPrecoProduto] = useState<number>(0);
-    const [pedidoId, setPedidoId] = useState<number | null>(null);
     const [openModal, setOpenModal] = useState(false);
 
     const produtos: Produto[] = [
@@ -35,24 +27,60 @@ const PedidoForm: React.FC = () => {
         { produto_id: 3, nome_produto: 'Produto 3', preco_produto: 30.0 },
     ];
 
-    useEffect(() => {
-        const calcularValorTotal = () => {
-            let total = 0;
-            produtosPedido.forEach((produto) => {
-                total += produto.qtd_produto_pedido * produto.preco_produto_pedido;
-            });
-            setValorTotal(total);
+    const initialValues = {
+        numero_pedido: '',
+        valor_total_pedido: 0,
+        data_pedido: new Date().toISOString().substring(0, 10),
+        status: 'ativo',
+        cliente_id: 1
+    };
+
+    const validationSchema = Yup.object({
+        numero_pedido: Yup.number().required('Número do Pedido é obrigatório'),
+        data_pedido: Yup.date().required('Data do Pedido é obrigatória'),
+        status: Yup.string().required('Status é obrigatório'),
+        cliente_id: Yup.number().required('Cliente ID é obrigatório'),
+        valor_total_pedido: Yup.number().required('Valor Total é obrigatório'),
+    });
+
+    const handleSubmit = async (values: typeof initialValues) => {
+        const novoPedido = {
+            numero_pedido: parseInt(values.numero_pedido),
+            valor_total_pedido: produtosPedido.reduce((total, produto) => total + produto.qtd_produto_pedido * produto.preco_produto_pedido, 0),
+            data_pedido: new Date(values.data_pedido).toISOString(),
+            status: values.status === 'ativo',
+            cliente_id: values.cliente_id
         };
 
-        calcularValorTotal();
-    }, [produtosPedido]);
+        try {
+            if (pedidoId === null) {
+                const response = await api.post('/pedidos', novoPedido);
+                const generatedPedidoId = response.data.pedido_id;
+                setPedidoId(generatedPedidoId);
+            } else {
+                await api.put(`/pedidos/${pedidoId}`, {
+                    valor_total_pedido: produtosPedido.reduce((total, produto) => total + produto.qtd_produto_pedido * produto.preco_produto_pedido, 0),
+                    data_pedido: new Date(values.data_pedido).toISOString(),
+                    status: values.status === 'ativo'
+                });
+            }
 
-    const handleSubmit = (event: React.FormEvent) => {
-        event.preventDefault();
-        console.log({ numeroPedido, valorTotal, dataPedido, status, produtosPedido });
+            await Promise.all(produtosPedido.map(async (produtoPedido) => {
+                const { produto_id, qtd_produto_pedido, preco_produto_pedido } = produtoPedido;
+                console.log({ produto_id, qtd_produto_pedido, preco_produto_pedido, pedidoId })
+                await api.post('/produto-pedido', {
+                    produto_id,
+                    qtd_produto_pedido,
+                    preco_produto_pedido,
+                    pedido_id: pedidoId || 0
+                });
+            }));
 
-        const generatedPedidoId = Math.floor(Math.random() * 1000);
-        setPedidoId(generatedPedidoId);
+            console.log('Pedido e produtos associados enviados com sucesso.');
+
+        } catch (error) {
+            console.error('Erro ao salvar pedido e produtos:', error);
+        }
     };
 
     const adicionarProdutoPedido = () => {
@@ -76,7 +104,7 @@ const PedidoForm: React.FC = () => {
         if (pedidoId !== null) {
             setOpenModal(true);
         } else {
-            alert('Por favor, cadastre o pedido antes de adicionar produtos.');
+            alert('Por favor, registre o pedido antes de adicionar produtos.');
         }
     };
 
@@ -85,115 +113,148 @@ const PedidoForm: React.FC = () => {
     };
 
     return (
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2, position: 'relative', minHeight: '80vh' }}>
-            <Typography variant="h6" gutterBottom>
-                Novo Pedido
-            </Typography>
+        <Formik
+            initialValues={initialValues}
+            validationSchema={validationSchema}
+            onSubmit={handleSubmit}
+        >
+            {({ isSubmitting, setFieldValue, values }) => (
+                <Form>
+                    <Box sx={{ mt: 2, position: 'relative', minHeight: '80vh' }}>
+                        <Typography variant="h6" gutterBottom>
+                            Novo Pedido
+                        </Typography>
 
-            <Grid container spacing={2}>
-                <Grid item xs={4}>
-                    <TextField
-                        label="Pedido ID"
-                        value={pedidoId || ''}
-                        fullWidth
-                        disabled
-                        InputProps={{
-                            style: { width: '200px', textAlign: 'center' },
-                            disableUnderline: true
-                        }}
-                        InputLabelProps={{
-                            shrink: true
-                        }}
-                        sx={{ mb: 2 }}
-                    />
-                </Grid>
-                <Grid item xs={8} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <TextField
-                        label="Número do Pedido"
-                        value={numeroPedido}
-                        onChange={(e) => setNumeroPedido(e.target.value)}
-                        InputProps={{
-                            style: { width: '300px' }
-                        }}
-                        fullWidth
-                        sx={{ mb: 2 }}
-                    />
+                        <Grid container spacing={2}>
+                            <Grid item xs={4}>
+                                <Field
+                                    as={TextField}
+                                    name="pedido_id"
+                                    label="Pedido ID"
+                                    value={pedidoId || ''}
+                                    fullWidth
+                                    disabled
+                                    InputProps={{
+                                        style: { width: '200px', textAlign: 'center' }
+                                    }}
+                                    InputLabelProps={{
+                                        shrink: true
+                                    }}
+                                    sx={{ mb: 2 }}
+                                />
+                            </Grid>
+                            <Grid item xs={8} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <Field
+                                    as={TextField}
+                                    name="numero_pedido"
+                                    label="Número do Pedido"
+                                    fullWidth
+                                    sx={{ mb: 2 }}
+                                    InputProps={{
+                                        style: { width: '300px' }
+                                    }}
+                                />
+                                <ErrorMessage name="numero_pedido" component={FormHelperText} />
 
-                    <FormControl fullWidth sx={{ mb: 2 }}>
-                        <InputLabel htmlFor="status-select">Status</InputLabel>
-                        <Select
-                            labelId="status-select"
-                            id="status-select"
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value as string)}
-                            label="Status"
-                        >
-                            <MenuItem value="ativo">Ativo</MenuItem>
-                            <MenuItem value="inativo">Inativo</MenuItem>
-                        </Select>
-                    </FormControl>
-                </Grid>
-            </Grid>
+                                <FormControl fullWidth sx={{ mb: 2 }}>
+                                    <InputLabel htmlFor="status-select">Status</InputLabel>
+                                    <Field
+                                        as={Select}
+                                        name="status"
+                                        labelId="status-select"
+                                        id="status-select"
+                                        label="Status"
+                                    >
+                                        <MenuItem value="ativo">Ativo</MenuItem>
+                                        <MenuItem value="inativo">Inativo</MenuItem>
+                                    </Field>
+                                    <ErrorMessage name="status" component={FormHelperText} />
+                                </FormControl>
+                            </Grid>
+                        </Grid>
 
-            <TextField
-                label="Data do Pedido"
-                type="date"
-                value={dataPedido}
-                onChange={(e) => setDataPedido(e.target.value)}
-                fullWidth
-                sx={{ mb: 2 }}
-                InputLabelProps={{
-                    style: { width: '300px' },
-                    shrink: true
-                }}
-            />
+                        <Field
+                            as={TextField}
+                            name="data_pedido"
+                            label="Data do Pedido"
+                            type="date"
+                            fullWidth
+                            sx={{ mb: 2 }}
+                            InputLabelProps={{
+                                style: { width: '300px' },
+                                shrink: true
+                            }}
+                        />
+                        <ErrorMessage name="data_pedido" component={FormHelperText} />
 
-            <TextField
-                label="Valor Total"
-                value={valorTotal.toFixed(2)}
-                fullWidth
-                disabled
-                sx={{ mb: 2 }}
-            />
+                        <Field
+                            as={TextField}
+                            name="valor_total_pedido"
+                            label="Valor Total"
+                            fullWidth
+                            disabled
+                            value={produtosPedido.reduce((total, produto) => total + produto.qtd_produto_pedido * produto.preco_produto_pedido, 0).toFixed(2)}
+                            sx={{ mb: 2 }}
+                        />
+                        <ErrorMessage name="valor_total_pedido" component={FormHelperText} />
 
-            <Box sx={{ position: 'absolute', bottom: '0px', width: '100%' }}>
-                <Button type="submit" variant="contained" color="primary" fullWidth>
-                    Cadastrar Pedido
-                </Button>
-            </Box>
+                        <Box sx={{ position: 'absolute', bottom: '0px', width: '100%' }}>
+                            <Grid container spacing={2}>
+                                <Grid item xs={6} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                    <Button type="submit" variant="contained" color="primary" fullWidth disabled={pedidoId !== null}>
+                                        Registrar pedido
+                                    </Button>
+                                </Grid>
+                                <Grid item xs={6} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                    <Button
+                                        type="button"
+                                        variant="contained"
+                                        color="primary"
+                                        fullWidth
+                                        disabled={pedidoId === null}
+                                        onClick={() => handleSubmit(values)}
+                                    >
+                                        Salvar Pedido
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Box>
 
-            {pedidoId !== null && (
-                <>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleOpenModal}
-                        fullWidth
-                        sx={{ mb: 2 }}
-                        style={{ width: '250px' }}
-                    >
-                        <AddIcon />
-                        Adicionar Produto
-                    </Button>
+                        {pedidoId !== null && (
+                            <>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={handleOpenModal}
+                                    fullWidth
+                                    sx={{ mb: 2 }}
+                                    style={{ width: '250px' }}
+                                >
+                                    <AddIcon />
+                                    Adicionar Produto
+                                </Button>
 
-                    <PedidoProdutoGrid produtosPedido={produtosPedido} />
-                </>
+                                <PedidoProdutoGrid produtosPedido={produtosPedido} />
+                            </>
+                        )}
+
+                        <AdicionarProdutoModal
+                            open={openModal}
+                            handleClose={handleCloseModal}
+                            produtoSelecionado={produtoSelecionado}
+                            setProdutoSelecionado={setProdutoSelecionado}
+                            quantidadeProduto={quantidadeProduto}
+                            setQuantidadeProduto={setQuantidadeProduto}
+                            precoProduto={precoProduto}
+                            setPrecoProduto={setPrecoProduto}
+                            pedidoId={pedidoId}
+                            produtos={produtos}
+                            adicionarProdutoPedido={adicionarProdutoPedido}
+                        />
+                    </Box>
+                </Form>
             )}
-
-            <AdicionarProdutoModal
-                open={openModal}
-                handleClose={handleCloseModal}
-                produtoSelecionado={produtoSelecionado}
-                setProdutoSelecionado={setProdutoSelecionado}
-                quantidadeProduto={quantidadeProduto}
-                setQuantidadeProduto={setQuantidadeProduto}
-                precoProduto={precoProduto}
-                setPrecoProduto={setPrecoProduto}
-                pedidoId={pedidoId}
-                produtos={produtos}
-                adicionarProdutoPedido={adicionarProdutoPedido}
-            />
-        </Box>
+        </Formik>
     );
 };
 
