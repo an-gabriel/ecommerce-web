@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
-import { Box, CssBaseline, IconButton, Grid } from '@mui/material';
+import { CssBaseline, IconButton, Grid, Drawer, useMediaQuery } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import theme from './theme';
 import Header from './components/Header';
@@ -12,9 +12,12 @@ import PedidoForm from './components/PedidoForm';
 
 const App: React.FC = () => {
   const [selectedForm, setSelectedForm] = useState<string>('cadastro_categoria');
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleSelectForm = (form: string) => {
     setSelectedForm(form);
+    setIsMobileDrawerOpen(false);
   };
 
   const renderForm = () => {
@@ -27,8 +30,6 @@ const App: React.FC = () => {
         return <ProdutoForm />;
       case 'cadastro_pedido':
         return <PedidoForm />;
-      case 'listagem_categoria':
-        return <div>Listagem de Categoria</div>;
       default:
         return null;
     }
@@ -38,21 +39,36 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Header />
+      <Drawer
+        variant="temporary"
+        anchor="left"
+        open={isMobileDrawerOpen}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        ModalProps={{ keepMounted: true }}
+      >
+        <Menu onSelectForm={handleSelectForm} />
+      </Drawer>
       <Grid container>
-        {/* Menu lateral */}
-        <Grid item xs={12} sm={3}>
+        <Grid item xs={3} sx={{ display: { xs: 'block', sm: 'none' } }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
-            edge="start"
-            sx={{ display: { sm: 'none' } }}
+            onClick={() => setIsMobileDrawerOpen(true)}
           >
             <MenuIcon />
           </IconButton>
-          <Menu onSelectForm={handleSelectForm} />
         </Grid>
-        {/* Formulário ou conteúdo principal */}
-        <Grid item sm={9} p={3}>
+        <Grid item sm={2} sx={{ display: { xs: 'none', sm: 'block' } }}>
+          <Drawer
+            variant="permanent"
+            anchor="left"
+            open
+            sx={{ width: '240px', flexShrink: 0 }}
+          >
+            <Menu onSelectForm={handleSelectForm} />
+          </Drawer>
+        </Grid>
+        <Grid item xs={12} sm={isMobile ? 12 : 9} p={3} sx={{ marginLeft: isMobile ? 0 : '5rem' }}>
           {renderForm()}
         </Grid>
       </Grid>
