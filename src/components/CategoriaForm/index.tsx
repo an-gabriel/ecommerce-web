@@ -1,90 +1,80 @@
-import React from 'react';
-import { TextField, Button, Typography, Box } from '@mui/material';
-import { useFormik, FormikHelpers } from 'formik';
-import * as Yup from 'yup';
+import React, { useState, useEffect } from 'react';
+import { Button, Box, CircularProgress } from '@mui/material';
+import ListaCategorias from './components/ListaCategorias';
+import AdicionarCategoriaModal from './components/AdicionarCategoriaModal';
 import api from '../../client/api';
 
-// Interface para os valores do formulário
-interface CategoriaFormValues {
-    nomeCategoria: string;
-    descricaoCategoria: string;
+interface Categoria {
+    categoria_id: number;
+    nome_categoria: string;
+    descricao_categoria: string;
 }
 
 const CategoriaForm: React.FC = () => {
-    const initialValues: CategoriaFormValues = {
-        nomeCategoria: '',
-        descricaoCategoria: '',
+    const [openModal, setOpenModal] = useState(false);
+    const [categorias, setCategorias] = useState<Categoria[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const handleOpenModal = () => {
+        setOpenModal(true);
     };
 
-    const validationSchema = Yup.object({
-        nomeCategoria: Yup.string()
-            .max(20, 'Nome da Categoria deve ter no máximo 20 caracteres')
-            .required('Nome da Categoria é obrigatório'),
-        descricaoCategoria: Yup.string()
-            .max(200, 'Descrição da Categoria deve ter no máximo 200 caracteres')
-            .required('Descrição da Categoria é obrigatória'),
-    });
+    const handleCloseModal = () => {
+        setOpenModal(false);
+    };
 
-
-    const handleSubmit = async (
-        values: CategoriaFormValues,
-        formikHelpers: FormikHelpers<CategoriaFormValues>
-    ) => {
+    const fetchCategorias = async () => {
         try {
-            const response = await api.post('/categorias', JSON.stringify({
-                nome_categoria: values.nomeCategoria,
-                descricao_categoria: values.descricaoCategoria,
-            }));
-            console.log('Categoria cadastrada com sucesso:', response.data);
-            formikHelpers.resetForm();
+            const response = await api.get('/categorias');
+            const categoriasCarregadas: Categoria[] = response.data;
+            setCategorias(categoriasCarregadas);
         } catch (error) {
-            console.error('Erro ao cadastrar categoria:', error);
+            console.error('Erro ao carregar categorias:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const formik = useFormik({
-        initialValues,
-        validationSchema,
-        onSubmit: handleSubmit,
-    });
+    const adicionarCategoria = async (novaCategoria: Categoria) => {
+        try {
+
+            await api.post('/categorias', novaCategoria);
+
+            await fetchCategorias();
+
+            const paginaAtual = Math.ceil(categorias.length / 10);
+            setCurrentPage(paginaAtual);
+        } catch (error) {
+            console.error('Erro ao adicionar categoria:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchCategorias();
+    }, []);
+
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
 
     return (
-        <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 2 }}>
-            <Typography variant="h6" gutterBottom>
-                Nova Categoria
-            </Typography>
-            <TextField
-                label="Nome da Categoria"
-                id="nomeCategoria"
-                name="nomeCategoria"
-                value={formik.values.nomeCategoria}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.nomeCategoria && Boolean(formik.errors.nomeCategoria)}
-                helperText={formik.touched.nomeCategoria && formik.errors.nomeCategoria}
-                fullWidth
-                margin="normal"
-                inputProps={{ maxLength: 20 }}
-            />
-            <TextField
-                label="Descrição da Categoria"
-                id="descricaoCategoria"
-                name="descricaoCategoria"
-                value={formik.values.descricaoCategoria}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.descricaoCategoria && Boolean(formik.errors.descricaoCategoria)}
-                helperText={formik.touched.descricaoCategoria && formik.errors.descricaoCategoria}
-                fullWidth
-                margin="normal"
-                inputProps={{ maxLength: 200 }}
-                multiline
-                rows={4}
-                maxRows={8}
-            />
-            <Button type="submit" variant="contained" color="primary">
-                Salvar
+        <Box sx={{ mt: 2 }}>
+            <Button onClick={handleOpenModal} variant="contained" color="primary" sx={{ mb: 2 }}>
+                + Adicionar Nova Categoria
             </Button>
+
+            <ListaCategorias categorias={categorias} currentPage={currentPage} />
+
+            <AdicionarCategoriaModal
+                open={openModal}
+                onClose={handleCloseModal}
+                onCategoriaAdded={adicionarCategoria}
+            />
         </Box>
     );
 };
