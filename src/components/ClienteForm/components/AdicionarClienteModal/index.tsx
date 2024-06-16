@@ -40,6 +40,10 @@ const AdicionarClienteModal: React.FC<AdicionarClienteModalProps> = ({ open, onC
         data_nascimento: Yup.string().required('Data de Nascimento é obrigatória'),
     });
     const handleSubmit = async (values: Cliente) => {
+<<<<<<< HEAD
+=======
+        // Enviar os valores para o backend
+>>>>>>> 78a17924a9166d4be3b8cb47536fd9d576cacc94
         await onClienteAdded(values);
         onClose();
     };
