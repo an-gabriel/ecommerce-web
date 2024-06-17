@@ -3,6 +3,8 @@ import { Button, Box, Snackbar } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
 import AdicionarClienteModal from './components/AdicionarClienteModal';
 import ListagemCliente from './components/ListagemCliente';
+import AddIcon from '@mui/icons-material/Add';
+
 import api from '../../client/api';
 
 interface Cliente {
@@ -66,7 +68,7 @@ const ClienteForm: React.FC = () => {
     return (
         <Box sx={{ mt: 2 }}>
             <Button onClick={handleOpenModal} variant="contained" color="primary" sx={{ mb: 2 }}>
-                + Adicionar Novo Cliente
+                <AddIcon /> Adicionar Novo Cliente
             </Button>
 
             <ListagemCliente clientes={clientes} />

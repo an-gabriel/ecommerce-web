@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, IconButton, Modal, Box, Typography } from '@mui/material';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, IconButton, Tooltip } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import api from '../../../../client/api';
@@ -98,12 +98,16 @@ const ListaCategorias: React.FC<ListaCategoriasProps> = ({ categorias, currentPa
                                     <TableCell>{categoria.nome_categoria}</TableCell>
                                     <TableCell>{categoria.descricao_categoria}</TableCell>
                                     <TableCell>
-                                        <IconButton aria-label="editar" onClick={() => handleEditClick(categoria.categoria_id)}>
-                                            <EditIcon />
-                                        </IconButton>
-                                        <IconButton aria-label="excluir" onClick={() => handleDeleteClick(categoria.categoria_id)}>
-                                            <DeleteIcon />
-                                        </IconButton>
+                                        <Tooltip title="Editar" arrow>
+                                            <IconButton aria-label="editar" onClick={() => handleEditClick(categoria.categoria_id)} style={{ color: 'blue' }}>
+                                                <EditIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Excluir" arrow>
+                                            <IconButton aria-label="excluir" onClick={() => handleDeleteClick(categoria.categoria_id)} style={{ color: 'red' }}>
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </Tooltip>
                                     </TableCell>
                                 </TableRow>
                             ))}
