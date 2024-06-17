@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, IconButton, Modal, Box, Typography, TextField, Button } from '@mui/material';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, IconButton, Modal, Box, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import * as Yup from 'yup';
-import { useFormik } from 'formik';
 import api from '../../../../client/api';
 import AdicionarCategoriaModal from '../AdicionarCategoriaModal';
-import './style.css'
+import './style.css';
 
 interface Categoria {
     categoria_id: number;
@@ -26,8 +24,6 @@ const ListaCategorias: React.FC<ListaCategoriasProps> = ({ categorias, currentPa
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [modalAberto, setModalAberto] = useState(false);
     const [categoriaSelecionada, setCategoriaSelecionada] = useState<Categoria | null>(null);
-    const [novoNomeCategoria, setNovoNomeCategoria] = useState('');
-    const [novaDescricaoCategoria, setNovaDescricaoCategoria] = useState('');
 
     useEffect(() => {
         setPage(currentPage - 1);
@@ -50,8 +46,6 @@ const ListaCategorias: React.FC<ListaCategoriasProps> = ({ categorias, currentPa
         const categoria = categorias.find(c => c.categoria_id === categoriaId);
         if (categoria) {
             setCategoriaSelecionada(categoria);
-            setNovoNomeCategoria(categoria.nome_categoria);
-            setNovaDescricaoCategoria(categoria.descricao_categoria);
             setModalAberto(true);
         }
     };
@@ -61,15 +55,25 @@ const ListaCategorias: React.FC<ListaCategoriasProps> = ({ categorias, currentPa
         setCategoriaSelecionada(null);
     };
 
-    const handleConfirmarEdicao = () => {
-        if (categoriaSelecionada) {
-            const novoConteudo: Categoria = {
-                ...categoriaSelecionada,
-                nome_categoria: novoNomeCategoria,
-                descricao_categoria: novaDescricaoCategoria,
-            };
-            onEditCategoria(categoriaSelecionada.categoria_id, novoConteudo);
-            handleCloseModal();
+    const adicionarCategoria = async (novaCategoria: Categoria): Promise<void> => {
+        try {
+            if (categoriaSelecionada) {
+                const novoConteudo: Categoria = {
+                    ...categoriaSelecionada,
+                    nome_categoria: novaCategoria.nome_categoria,
+                    descricao_categoria: novaCategoria.descricao_categoria,
+                };
+                await api.put(`/categorias/${categoriaSelecionada.categoria_id}`, novoConteudo);
+
+                onEditCategoria(categoriaSelecionada.categoria_id, novoConteudo);
+                handleCloseModal();
+            } else {
+                const response = await api.post('/categorias', novaCategoria);
+                onEditCategoria(response.data.categoria_id, response.data);
+                handleCloseModal();
+            }
+        } catch (error) {
+            console.error('Erro ao adicionar categoria:', error);
         }
     };
 
@@ -116,37 +120,14 @@ const ListaCategorias: React.FC<ListaCategoriasProps> = ({ categorias, currentPa
                 onRowsPerPageChange={handleChangeRowsPerPage}
             />
 
-            <Modal open={modalAberto} onClose={handleCloseModal}>
-                <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
-                    <Typography variant="h6" gutterBottom>
-                        Editar Categoria
-                    </Typography>
-                    <TextField
-                        id="nomeCategoria"
-                        name="nomeCategoria"
-                        label="Nome"
-                        value={novoNomeCategoria}
-                        onChange={(e) => setNovoNomeCategoria(e.target.value)}
-                        fullWidth
-                        margin="normal"
-                    />
-                    <TextField
-                        id="descricaoCategoria"
-                        name="descricaoCategoria"
-                        label="Descrição"
-                        value={novaDescricaoCategoria}
-                        onChange={(e) => setNovaDescricaoCategoria(e.target.value)}
-                        fullWidth
-                        margin="normal"
-                    />
-                    <Button variant="contained" color="primary" onClick={handleConfirmarEdicao}>
-                        Confirmar
-                    </Button>
-                    <Button variant="contained" onClick={handleCloseModal}>
-                        Cancelar
-                    </Button>
-                </Box>
-            </Modal>
+            {categoriaSelecionada !== null && (
+                <AdicionarCategoriaModal
+                    open={modalAberto}
+                    onClose={handleCloseModal}
+                    onCategoriaAdded={adicionarCategoria}
+                    categoriaInicial={categoriaSelecionada}
+                />
+            )}
         </Paper>
     );
 };

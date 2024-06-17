@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TextField, Button, Typography, Modal, Box } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -13,7 +13,7 @@ interface Categoria {
 interface AdicionarCategoriaModalProps {
     open: boolean;
     onClose: () => void;
-    onCategoriaAdded: (novaCategoria: Categoria) => void;
+    onCategoriaAdded: (novaCategoria: Categoria) => Promise<void>;
     categoriaInicial?: Categoria | null;
 }
 
@@ -36,7 +36,7 @@ const AdicionarCategoriaModal: React.FC<AdicionarCategoriaModalProps> = ({ open,
     const handleSubmit = async (values: Categoria) => {
         try {
             let response;
-            if (categoriaInicial) {
+            if (values.categoria_id) {
                 response = await api.put(`/categorias/${values.categoria_id}`, values);
             } else {
                 response = await api.post('/categorias', values);
@@ -56,6 +56,12 @@ const AdicionarCategoriaModal: React.FC<AdicionarCategoriaModalProps> = ({ open,
         validationSchema,
         onSubmit: handleSubmit,
     });
+
+    useEffect(() => {
+        if (categoriaInicial) {
+            formik.setValues(categoriaInicial);
+        }
+    }, [categoriaInicial]);
 
     return (
         <Modal
@@ -78,38 +84,40 @@ const AdicionarCategoriaModal: React.FC<AdicionarCategoriaModalProps> = ({ open,
                 <Typography variant="h6" gutterBottom>
                     {categoriaInicial ? 'Editar Categoria' : 'Nova Categoria'}
                 </Typography>
-                <TextField
-                    label="Nome da Categoria"
-                    id="nome_categoria"
-                    name="nome_categoria"
-                    value={formik.values.nome_categoria}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.nome_categoria && Boolean(formik.errors.nome_categoria)}
-                    helperText={formik.touched.nome_categoria && formik.errors.nome_categoria}
-                    fullWidth
-                    margin="normal"
-                    inputProps={{ maxLength: 20 }}
-                />
-                <TextField
-                    label="Descrição da Categoria"
-                    id="descricao_categoria"
-                    name="descricao_categoria"
-                    value={formik.values.descricao_categoria}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.descricao_categoria && Boolean(formik.errors.descricao_categoria)}
-                    helperText={formik.touched.descricao_categoria && formik.errors.descricao_categoria}
-                    fullWidth
-                    margin="normal"
-                    inputProps={{ maxLength: 200 }}
-                    multiline
-                    rows={4}
-                    maxRows={8}
-                />
-                <Button type="button" variant="contained" color="primary" onClick={() => formik.handleSubmit}>
-                    Salvar
-                </Button>
+                <form onSubmit={formik.handleSubmit}>
+                    <TextField
+                        label="Nome da Categoria"
+                        id="nome_categoria"
+                        name="nome_categoria"
+                        value={formik.values.nome_categoria}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        error={formik.touched.nome_categoria && Boolean(formik.errors.nome_categoria)}
+                        helperText={formik.touched.nome_categoria && formik.errors.nome_categoria}
+                        fullWidth
+                        margin="normal"
+                        inputProps={{ maxLength: 20 }}
+                    />
+                    <TextField
+                        label="Descrição da Categoria"
+                        id="descricao_categoria"
+                        name="descricao_categoria"
+                        value={formik.values.descricao_categoria}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        error={formik.touched.descricao_categoria && Boolean(formik.errors.descricao_categoria)}
+                        helperText={formik.touched.descricao_categoria && formik.errors.descricao_categoria}
+                        fullWidth
+                        margin="normal"
+                        inputProps={{ maxLength: 200 }}
+                        multiline
+                        rows={4}
+                        maxRows={8}
+                    />
+                    <Button type="submit" variant="contained" color="primary">
+                        {categoriaInicial ? 'Salvar Edição' : 'Adicionar'}
+                    </Button>
+                </form>
             </Box>
         </Modal>
     );
