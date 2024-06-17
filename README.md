@@ -1,46 +1,89 @@
-# Getting Started with Create React App
+### README para o Projeto React Ecommerce
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Este é o repositório do frontend para o projeto de Ecommerce desenvolvido em React.
 
-## Available Scripts
+### Pré-requisitos
 
-In the project directory, you can run:
+Antes de iniciar, certifique-se de ter instalado o Node.js e o Docker em sua máquina.
 
-### `npm start`
+### Configuração do Backend
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+1. **Clonar o repositório do backend**
+   ```
+   git clone https://github.com/an-gabriel/ecommerce-server
+   ```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+2. **Instalar Dependências**
+   ```
+   cd ecommerce-server
+   npm install
+   ```
 
-### `npm test`
+3. **Iniciar o Backend com Docker**
+   ```
+   docker-compose up --build -d
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+   Este comando utilizará Docker Compose para construir e iniciar o banco de dados necessário para o backend.
 
-### `npm run build`
+4. **Iniciar o Backend**
+   ```
+   npm run dev
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+   Este comando iniciará o servidor backend. Certifique-se de que o backend está sendo executado na porta adequada para que o frontend possa se conectar corretamente.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Configuração do Frontend
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. **Clonar o repositório do frontend**
+   ```
+   git clone https://github.com/an-gabriel/ecommerce-web
+   ```
 
-### `npm run eject`
+2. **Instalar Dependências**
+   ```
+   cd ecommerce-web
+   npm install
+   ```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+3. **Iniciar o Servidor de Desenvolvimento**
+   ```
+   npm start
+   ```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+   Este comando iniciará o servidor de desenvolvimento do React. Quando solicitado, confirme que deseja abrir o projeto em uma porta diferente da porta do backend.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Funcionalidades
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+- **Descrição das Funcionalidades**
+  - CRUD pedidos
+  - CRUD endereço
+  - CRUD cliente
+  - CRUD produto 
 
-## Learn More
+### Tecnologias Utilizadas
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- **React**: Utilizado para construir a interface do usuário.
+- **Axios**: Biblioteca para fazer requisições HTTP.
+- **React Router**: Para navegação entre páginas.
+- **Styled Components e MUI**: Para estilização dos componentes.
+- **ESLint e Prettier**: Ferramentas para garantir código limpo e padronizado.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Estrutura do Projeto
+
+A estrutura do projeto segue os princípios de componentização e boas práticas de desenvolvimento React, visando modularidade e reutilização de código.
+
+```
+ecommerce-web/
+│
+├── public/             # Arquivos públicos
+├── src/                # Código-fonte do frontend
+│   ├── client/         # api de comunicação com o backend.
+│   ├── components/     # Componentes React reutilizáveis
+│
+└── README.md           # Este arquivo
+```
+
+### Licença
+
+Este projeto está licenciado sob a [Licença XYZ]. Veja o arquivo LICENSE para mais detalhes.
