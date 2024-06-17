@@ -1,12 +1,13 @@
-import React from 'react';
-import { Modal, Box, Typography, TextField, Button } from '@mui/material';
+import React, { useEffect } from 'react';
+import { TextField, Button, Typography, Modal, Box } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
+import api from '../../../../client/api';
 
 interface Cliente {
+    cliente_id: number;
     email: string;
     username: string;
-    senha: string;
     nome: string;
     cpf: string;
     telefone: string;
@@ -16,14 +17,15 @@ interface Cliente {
 interface AdicionarClienteModalProps {
     open: boolean;
     onClose: () => void;
-    onClienteAdded: (novoCliente: Partial<Cliente>) => Promise<void>;
+    onClienteAdded: (cliente: Partial<Cliente>) => void;
+    clienteInicial?: Cliente | null;
 }
 
-const AdicionarClienteModal: React.FC<AdicionarClienteModalProps> = ({ open, onClose, onClienteAdded }) => {
-    const initialValues: Cliente = {
+const AdicionarClienteModal: React.FC<AdicionarClienteModalProps> = ({ open, onClose, onClienteAdded, clienteInicial }) => {
+    const initialValues: Cliente = clienteInicial || {
+        cliente_id: 0,
         email: '',
         username: '',
-        senha: '',
         nome: '',
         cpf: '',
         telefone: '',
@@ -31,17 +33,37 @@ const AdicionarClienteModal: React.FC<AdicionarClienteModalProps> = ({ open, onC
     };
 
     const validationSchema = Yup.object({
-        email: Yup.string().max(50, 'E-mail deve ter no máximo 50 caracteres').email('Formato de e-mail inválido').required('E-mail é obrigatório'),
-        username: Yup.string().max(15, 'Username deve ter no máximo 15 caracteres').required('Username é obrigatório'),
-        senha: Yup.string().max(20, 'Senha deve ter no máximo 20 caracteres').required('Senha é obrigatória'),
-        nome: Yup.string().max(200, 'Nome deve ter no máximo 200 caracteres').required('Nome é obrigatório'),
-        cpf: Yup.string().max(11, 'CPF deve ter no máximo 11 caracteres').required('CPF é obrigatório'),
-        telefone: Yup.string().max(11, 'Telefone deve ter no máximo 11 caracteres').required('Telefone é obrigatório'),
+        email: Yup.string().email('Email inválido').required('Email é obrigatório'),
+        username: Yup.string().required('Username é obrigatório'),
+        nome: Yup.string().required('Nome é obrigatório'),
+        cpf: Yup.string().required('CPF é obrigatório'),
+        telefone: Yup.string().required('Telefone é obrigatório'),
         data_nascimento: Yup.string().required('Data de Nascimento é obrigatória'),
     });
+
     const handleSubmit = async (values: Cliente) => {
-        await onClienteAdded(values);
-        onClose();
+        try {
+            console.log(values)
+            let response;
+
+            if (values.cliente_id) {
+                const newValues = {
+                    username: values.username,
+                    nome: values.nome,
+                    telefone: values.telefone,
+                    data_nascimento: values.data_nascimento,
+                };
+                console.log("🚀 ~ handleSubmit ~ newValues:", newValues)
+                response = await api.put(`/clientes/${values.cliente_id}`, newValues);
+            } else {
+                response = await api.post('/clientes', values);
+            }
+
+            onClienteAdded(response.data);
+            onClose();
+        } catch (error) {
+            console.error('Erro ao salvar o cliente:', error);
+        }
     };
 
     const formik = useFormik({
@@ -50,8 +72,14 @@ const AdicionarClienteModal: React.FC<AdicionarClienteModalProps> = ({ open, onC
         onSubmit: handleSubmit,
     });
 
+    useEffect(() => {
+        if (clienteInicial) {
+            formik.setValues(clienteInicial);
+        }
+    }, [clienteInicial]);
+
     return (
-        <Modal open={open} onClose={onClose} aria-labelledby="modal-adicionar-cliente" aria-describedby="modal-para-adicionar-um-novo-cliente">
+        <Modal open={open} onClose={onClose} aria-labelledby="modal-adicionar-cliente" aria-describedby="modal-para-adicionar-ou-editar-um-cliente">
             <Box sx={{
                 position: 'absolute',
                 top: '50%',
@@ -64,11 +92,11 @@ const AdicionarClienteModal: React.FC<AdicionarClienteModalProps> = ({ open, onC
                 maxWidth: '90%',
             }}>
                 <Typography variant="h6" gutterBottom>
-                    Novo Cliente
+                    {clienteInicial ? 'Editar Cliente' : 'Novo Cliente'}
                 </Typography>
                 <form onSubmit={formik.handleSubmit}>
                     <TextField
-                        label="E-mail"
+                        label="Email"
                         id="email"
                         name="email"
                         value={formik.values.email}
@@ -88,19 +116,6 @@ const AdicionarClienteModal: React.FC<AdicionarClienteModalProps> = ({ open, onC
                         onBlur={formik.handleBlur}
                         error={formik.touched.username && Boolean(formik.errors.username)}
                         helperText={formik.touched.username && formik.errors.username}
-                        fullWidth
-                        margin="normal"
-                    />
-                    <TextField
-                        label="Senha"
-                        id="senha"
-                        name="senha"
-                        type="password"
-                        value={formik.values.senha}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        error={formik.touched.senha && Boolean(formik.errors.senha)}
-                        helperText={formik.touched.senha && formik.errors.senha}
                         fullWidth
                         margin="normal"
                     />
@@ -144,7 +159,6 @@ const AdicionarClienteModal: React.FC<AdicionarClienteModalProps> = ({ open, onC
                         label="Data de Nascimento"
                         id="data_nascimento"
                         name="data_nascimento"
-                        type="date"
                         value={formik.values.data_nascimento}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
@@ -152,10 +166,9 @@ const AdicionarClienteModal: React.FC<AdicionarClienteModalProps> = ({ open, onC
                         helperText={formik.touched.data_nascimento && formik.errors.data_nascimento}
                         fullWidth
                         margin="normal"
-                        InputLabelProps={{ shrink: true }}
                     />
                     <Button type="submit" variant="contained" color="primary">
-                        Salvar
+                        {clienteInicial ? 'Salvar Edição' : 'Adicionar'}
                     </Button>
                 </form>
             </Box>
