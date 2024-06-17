@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination } from '@mui/material';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, IconButton, Tooltip } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 
 interface Endereco {
     endereco_id: number;
@@ -16,12 +18,16 @@ interface EnderecoListagemProps {
     enderecos: Endereco[];
     rowsPerPageOptions?: number[];
     defaultRowsPerPage?: number;
+    onEditEndereco: (endereco: Endereco) => void;
+    onDeleteEndereco: (enderecoId: number) => void;
 }
 
 const ListagemEndereco: React.FC<EnderecoListagemProps> = ({
     enderecos,
     rowsPerPageOptions = [5, 10, 25],
     defaultRowsPerPage = 5,
+    onEditEndereco,
+    onDeleteEndereco
 }) => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
@@ -49,6 +55,7 @@ const ListagemEndereco: React.FC<EnderecoListagemProps> = ({
                             <TableCell>Número</TableCell>
                             <TableCell>Complemento</TableCell>
                             <TableCell>UF</TableCell>
+                            <TableCell>Ações</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -62,6 +69,18 @@ const ListagemEndereco: React.FC<EnderecoListagemProps> = ({
                                 <TableCell>{endereco.numero}</TableCell>
                                 <TableCell>{endereco.complemento}</TableCell>
                                 <TableCell>{endereco.uf}</TableCell>
+                                <TableCell>
+                                    <Tooltip title="Editar" arrow>
+                                        <IconButton aria-label="editar" onClick={() => onEditEndereco(endereco)} style={{ color: 'blue' }}>
+                                            <EditIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Excluir" arrow>
+                                        <IconButton aria-label="excluir" onClick={() => onDeleteEndereco(endereco.endereco_id)} style={{ color: 'red' }}>
+                                            <DeleteIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

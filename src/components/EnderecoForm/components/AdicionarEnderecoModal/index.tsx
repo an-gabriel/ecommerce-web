@@ -17,10 +17,11 @@ interface AdicionarEnderecoModalProps {
     open: boolean;
     onClose: () => void;
     onEnderecoAdded: (novoEndereco: Partial<Endereco>) => Promise<void>;
+    enderecoInicial?: Endereco | null;
 }
 
-const AdicionarEnderecoModal: React.FC<AdicionarEnderecoModalProps> = ({ open, onClose, onEnderecoAdded }) => {
-    const initialValues: Endereco = {
+const AdicionarEnderecoModal: React.FC<AdicionarEnderecoModalProps> = ({ open, onClose, onEnderecoAdded, enderecoInicial }) => {
+    const initialValues: Endereco = enderecoInicial || {
         cep: '',
         rua: '',
         bairro: '',
@@ -49,6 +50,7 @@ const AdicionarEnderecoModal: React.FC<AdicionarEnderecoModalProps> = ({ open, o
         initialValues,
         validationSchema,
         onSubmit: handleSubmit,
+        enableReinitialize: true, // This will reset the form when initialValues change
     });
 
     return (
@@ -65,7 +67,7 @@ const AdicionarEnderecoModal: React.FC<AdicionarEnderecoModalProps> = ({ open, o
                 maxWidth: '90%',
             }}>
                 <Typography variant="h6" gutterBottom>
-                    Novo Endereço
+                    {enderecoInicial ? 'Editar Endereço' : 'Novo Endereço'}
                 </Typography>
                 <form onSubmit={formik.handleSubmit}>
                     <TextField
@@ -153,7 +155,7 @@ const AdicionarEnderecoModal: React.FC<AdicionarEnderecoModalProps> = ({ open, o
                         margin="normal"
                     />
                     <Button type="submit" variant="contained" color="primary">
-                        Salvar
+                        {enderecoInicial ? 'Atualizar' : 'Salvar'}
                     </Button>
                 </form>
             </Box>

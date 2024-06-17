@@ -19,13 +19,20 @@ interface Endereco {
 const EnderecoForm: React.FC = () => {
     const [openModal, setOpenModal] = useState(false);
     const [enderecos, setEnderecos] = useState<Endereco[]>([]);
+    const [currentEndereco, setCurrentEndereco] = useState<Endereco | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const handleOpenModal = () => {
+    const handleOpenModal = (endereco?: Endereco) => {
+        if (endereco) {
+            setCurrentEndereco(endereco);
+        } else {
+            setCurrentEndereco(null);
+        }
         setOpenModal(true);
     };
 
     const handleCloseModal = () => {
+        setCurrentEndereco(null);
         setOpenModal(false);
     };
 
@@ -41,12 +48,32 @@ const EnderecoForm: React.FC = () => {
 
     const adicionarEndereco = async (novoEndereco: Partial<Endereco>) => {
         try {
-            const response = await api.post('/enderecos', novoEndereco);
-            console.log('Endereço adicionado com sucesso:', response.data);
+            if (currentEndereco) {
+                const { cep, ...rest } = novoEndereco
+
+                console.log(rest)
+                const response = await api.put(`/enderecos/${currentEndereco.endereco_id}`, rest);
+                console.log('Endereço atualizado com sucesso:', response.data);
+            } else {
+                console.log("aqui")
+                const response = await api.post('/enderecos', novoEndereco);
+                console.log('Endereço adicionado com sucesso:', response.data);
+            }
             await fetchEnderecos();
+            handleCloseModal();
         } catch (error) {
-            console.error('Erro ao adicionar endereço:', error);
-            setError('Erro ao adicionar endereço. Tente novamente mais tarde.');
+            console.error('Erro ao adicionar/atualizar endereço:', error);
+            setError('Erro ao adicionar/atualizar endereço. Tente novamente mais tarde.');
+        }
+    };
+
+    const handleDeleteEndereco = async (enderecoId: number) => {
+        try {
+            await api.delete(`/enderecos/${enderecoId}`);
+            setEnderecos(prevEnderecos => prevEnderecos.filter(endereco => endereco.endereco_id !== enderecoId));
+        } catch (error) {
+            console.error('Erro ao deletar endereço:', error);
+            setError('Erro ao deletar endereço. Tente novamente mais tarde.');
         }
     };
 
@@ -60,16 +87,21 @@ const EnderecoForm: React.FC = () => {
 
     return (
         <Box sx={{ mt: 2 }}>
-            <Button onClick={handleOpenModal} variant="contained" color="primary" sx={{ mb: 2 }}>
+            <Button onClick={() => handleOpenModal()} variant="contained" color="primary" sx={{ mb: 2 }}>
                 + Adicionar Novo Endereço
             </Button>
 
-            <EnderecoListagem enderecos={enderecos} />
+            <EnderecoListagem
+                enderecos={enderecos}
+                onEditEndereco={handleOpenModal}
+                onDeleteEndereco={handleDeleteEndereco}
+            />
 
             <AdicionarEnderecoModal
                 open={openModal}
                 onClose={handleCloseModal}
                 onEnderecoAdded={adicionarEndereco}
+                enderecoInicial={currentEndereco}
             />
 
             <Snackbar open={!!error} autoHideDuration={6000} onClose={handleSnackbarClose}>
